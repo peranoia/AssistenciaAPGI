@@ -1,3 +1,5 @@
+
+const API_URL = "https://script.google.com/macros/s/AKfycbymWjk3ZeeElIrJ7UnlldggvH2Lrkh0QHr59xCUZM8JTn-7XO3OdtxL-7sr1NY3y76g/exec";
 let currentMode = 'registrar'; // 'registrar' o 'modificar'
   let subModeAnterior = 'editar'; // 'editar' o 'crear' (per al mode registres anteriors)
 
