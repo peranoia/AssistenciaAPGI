@@ -3,70 +3,79 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Passar Llista — EASD Llotja</title>
-  <style>
-    body {
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      min-height: 100vh;
-      margin: 0;
-      background-color: #f1f5f9;
-      color: #1e293b;
-      text-align: center;
-      padding: 20px;
-    }
-    .card {
-      background: white;
-      padding: 30px;
-      border-radius: 16px;
-      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-      max-width: 360px;
-      width: 100%;
-    }
-    .btn {
-      display: inline-block;
-      width: 100%;
-      background-color: #2563eb;
-      color: white;
-      font-weight: 600;
-      padding: 14px 0;
-      border-radius: 10px;
-      text-decoration: none;
-      margin-top: 20px;
-      box-shadow: 0 2px 4px rgba(37, 99, 235, 0.3);
-    }
-    .spinner {
-      margin: 20px auto;
-      width: 32px;
-      height: 32px;
-      border: 4px solid #e2e8f0;
-      border-top: 4px solid #2563eb;
-      border-radius: 50%;
-      animation: spin 1s linear infinite;
-    }
-    @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-  </style>
-  <script>
-    // Força l'obertura neta de la Web App netejant la ruta de sessió de Google
-    window.onload = function() {
-      var webAppUrl = "https://script.google.com/macros/s/AKfycbymWjk3ZeeElIrJ7UnlldggvH2Lrkh0QHr59xCUZM8JTn-7XO3OdtxL-7sr1NY3y76g/exec?authuser=0";
-      
-      // Si s'obre des d'un mòbil o com a PWA / accés directe, redirigeix directament
-      setTimeout(function() {
-        window.location.href = webAppUrl;
-      }, 800);
-    };
-  </script>
+  <title>Control d'Assistència — EASD Llotja</title>
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <div class="card">
-    <h2>Passar Llista</h2>
-    <p>Obrint l'aplicació d'assistència...</p>
-    <div class="spinner"></div>
-    <a id="direct-link" href="https://script.google.com/macros/s/AKfycbymWjk3ZeeElIrJ7UnlldggvH2Lrkh0QHr59xCUZM8JTn-7XO3OdtxL-7sr1NY3y76g/exec?authuser=0" class="btn">Entrar directament</a>
+  <!-- Aquí s'enganxa el contingut que tens dins del <body> de l'Index.html -->
+  <div class="app-container">
+     
+      <!-- Capçalera i selecció de mode -->
+      <div class="header">
+        <h2>Control d'Assistència</h2>
+        <div class="view-toggle">
+          <button type="button" id="btnModeRegistrar" class="toggle-btn active">Registrar Classe (Avui)</button>
+          <button type="button" id="btnModeModificar" class="toggle-btn">Registres Anteriors</button>
+        </div>
+      </div>
+
+      <!-- Formulari de Selecció -->
+      <div class="form-card">
+        
+        <!-- Només visible o editable segons el mode triat -->
+        <div class="form-group" id="containerData">
+          <label for="inputData">Data:</label>
+          <input type="date" id="inputData" class="form-control">
+        </div>
+
+        <div class="form-group">
+          <label for="selectGrup">Curs:</label>
+          <select id="selectGrup" class="form-control">
+            <option value="">-- Selecciona Curs --</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label for="selectModul">Mòdul:</label>
+          <select id="selectModul" class="form-control" disabled>
+            <option value="">-- Selecciona Mòdul --</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label for="selectUF">Unitat Formativa (UF):</label>
+          <select id="selectUF" class="form-control" disabled>
+            <option value="">-- Selecciona UF --</option>
+          </select>
+        </div>
+
+        <div class="form-group" id="containerHores">
+          <label for="inputHores">Durada de la sessió (Hores):</label>
+          <select id="inputHores" class="form-control">
+            <option value="1">1 hora</option>
+            <option value="1.5">1 hora i mitja</option>
+            <option value="2" selected>2 hores</option>
+            <option value="2.5">2 hores i mitja</option>
+            <option value="3">3 hores</option>
+          </select>
+        </div>
+
+        <button type="button" id="btnCarregar" class="btn btn-secondary">Carregar Alumnes</button>
+      </div>
+
+      <!-- Missatge informatiu quan es carreguin registres anteriors -->
+      <div id="infoModeContainer" class="alert-info" style="display: none; margin: 15px 0; padding: 10px; border-radius: 6px; background-color: #e8f4f8; color: #1d6f8a; font-weight: 500;"></div>
+
+      <!-- Llista d'Alumnes -->
+      <div id="alumnesContainer" class="students-list"></div>
+
+      <!-- Botó Acció (Guardar / Actualitzar) -->
+      <div class="action-bar">
+        <button type="button" id="btnGuardar" class="btn btn-success" style="display: none;">Guardar Assistència</button>
+      </div>
+    <!-- Tot el teu HTML actual de targetes, selectores i llista d'alumnes -->
   </div>
+
+  <script src="script.js"></script>
 </body>
 </html>
