@@ -2,28 +2,71 @@
 <html lang="ca">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Passar Llista — EASD Llotja</title>
   <style>
-    html, body {
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
       margin: 0;
-      padding: 0;
-      width: 100%;
-      height: 100%;
-      overflow: hidden;
-      background-color: #f8fafc;
+      background-color: #f1f5f9;
+      color: #1e293b;
+      text-align: center;
+      padding: 20px;
     }
-    iframe {
+    .card {
+      background: white;
+      padding: 30px;
+      border-radius: 16px;
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+      max-width: 360px;
       width: 100%;
-      height: 100%;
-      border: none;
     }
+    .btn {
+      display: inline-block;
+      width: 100%;
+      background-color: #2563eb;
+      color: white;
+      font-weight: 600;
+      padding: 14px 0;
+      border-radius: 10px;
+      text-decoration: none;
+      margin-top: 20px;
+      box-shadow: 0 2px 4px rgba(37, 99, 235, 0.3);
+    }
+    .spinner {
+      margin: 20px auto;
+      width: 32px;
+      height: 32px;
+      border: 4px solid #e2e8f0;
+      border-top: 4px solid #2563eb;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+    }
+    @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
   </style>
+  <script>
+    // Força l'obertura neta de la Web App netejant la ruta de sessió de Google
+    window.onload = function() {
+      var webAppUrl = "https://script.google.com/macros/s/AKfycbymWjk3ZeeElIrJ7UnlldggvH2Lrkh0QHr59xCUZM8JTn-7XO3OdtxL-7sr1NY3y76g/exec?authuser=0";
+      
+      // Si s'obre des d'un mòbil o com a PWA / accés directe, redirigeix directament
+      setTimeout(function() {
+        window.location.href = webAppUrl;
+      }, 800);
+    };
+  </script>
 </head>
 <body>
-  <iframe 
-    src="https://script.google.com/macros/s/AKfycbymWjk3ZeeElIrJ7UnlldggvH2Lrkh0QHr59xCUZM8JTn-7XO3OdtxL-7sr1NY3y76g/exec?authuser=0"
-    allow="geolocation; microphone; camera">
-  </iframe>
+  <div class="card">
+    <h2>Passar Llista</h2>
+    <p>Obrint l'aplicació d'assistència...</p>
+    <div class="spinner"></div>
+    <a id="direct-link" href="https://script.google.com/macros/s/AKfycbymWjk3ZeeElIrJ7UnlldggvH2Lrkh0QHr59xCUZM8JTn-7XO3OdtxL-7sr1NY3y76g/exec?authuser=0" class="btn">Entrar directament</a>
+  </div>
 </body>
 </html>
