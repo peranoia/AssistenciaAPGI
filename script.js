@@ -66,21 +66,24 @@ async function callApi(action, params = {}, payload = null) {
 }
 
 // Carrega TOTA l'estructura de grups, mòduls i UFs al principi
+// Carrega TOTA l'estructura de grups, mòduls i UFs al principi
 function carregarEstructuraInicial() {
   const selectGrup = document.getElementById('selectGrup');
   if (selectGrup) selectGrup.innerHTML = '<option value="">Carregant opcions...</option>';
 
   callApi('getEstructuraCompleta')
     .then(data => {
-      // Assegurem que obtenim un Array independentment del format de retorn
-      if (Array.isArray(data)) {
-        estructuraEscola = data;
-      } else if (data && Array.isArray(data.result)) {
-        estructuraEscola = data.result;
-      } else if (data && Array.isArray(data.data)) {
-        estructuraEscola = data.data;
+      console.log("Dades rebudes de getEstructuraCompleta:", data);
+
+      // Comprovar si les dades venen directament o embolcallades
+      let llista = data;
+      if (data && data.result) llista = data.result;
+      if (data && data.data) llista = data.data;
+
+      if (Array.isArray(llista)) {
+        estructuraEscola = llista;
       } else {
-        console.error("Format de dades rebut no vàlid:", data);
+        console.error("No s'ha rebut un Array vàlid de l'API. Contingut:", data);
         estructuraEscola = [];
       }
 
