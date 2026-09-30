@@ -2,6 +2,9 @@ const API_URL = "https://script.google.com/macros/s/AKfycbymWjk3ZeeElIrJ7Unlldgg
 let currentMode = 'registrar'; // 'registrar' o 'modificar'
 let subModeAnterior = 'editar'; // 'editar' o 'crear' (per al mode registres anteriors)
 
+// Variable global per emmagatzemar l'estructura de la plantilla en memòria
+let estructuraEscola = [];
+
 window.addEventListener('DOMContentLoaded', () => {
   // Data d'avui per defecte
   const today = getTodayFormatted();
@@ -11,7 +14,8 @@ window.addEventListener('DOMContentLoaded', () => {
   // En mode registrar, la data queda bloquejada a avui
   if (inputData) inputData.disabled = true;
 
-  carregarGrups();
+  // Carreguem l'estructura completa al principi d'una sola vegada
+  carregarEstructuraInicial();
 
   // Assignació d'esdeveniments
   document.getElementById('selectGrup').addEventListener('change', enCanviarGrup);
@@ -61,6 +65,93 @@ async function callApi(action, params = {}, payload = null) {
   }
 }
 
+// Carrega TOTA l'estructura de grups, mòduls i UFs al principi
+function carregarEstructuraInicial() {
+  const selectGrup = document.getElementById('selectGrup');
+  if (selectGrup) selectGrup.innerHTML = '<option value="">Carregant opcions...</option>';
+
+  callApi('getEstructuraCompleta')
+    .then(data => {
+      estructuraEscola = data || [];
+      poblarDesplegableGrups();
+    })
+    .catch(err => {
+      mostrarError(err);
+      if (selectGrup) selectGrup.innerHTML = '<option value="">Error carregant opcions</option>';
+    });
+}
+
+// Omnipresent: Pobla els grups únics de l'estructura descarregada
+function poblarDesplegableGrups() {
+  const selectGrup = document.getElementById('selectGrup');
+  selectGrup.innerHTML = '<option value="">-- Selecciona Curs --</option>';
+
+  // Extreure grups únics
+  const grupsUnics = [...new Set(estructuraEscola.map(item => item.grup))].filter(Boolean);
+
+  grupsUnics.forEach(grup => {
+    const opt = document.createElement('option');
+    opt.value = grup;
+    opt.textContent = grup;
+    selectGrup.appendChild(opt);
+  });
+}
+
+// Filtre INSTANTANI de Mòduls segons el Grup triat (Sense cap petició de xarxa)
+function enCanviarGrup() {
+  const grup = document.getElementById('selectGrup').value;
+  const selectModul = document.getElementById('selectModul');
+  const selectUF = document.getElementById('selectUF');
+
+  selectModul.innerHTML = '<option value="">-- Selecciona Mòdul --</option>';
+  selectUF.innerHTML = '<option value="">-- Selecciona UF --</option>';
+  selectModul.disabled = true;
+  selectUF.disabled = true;
+
+  if (!grup) return;
+
+  // Filtrar mòduls únics en memòria
+  const modulsDelGrup = [...new Set(
+    estructuraEscola
+      .filter(item => item.grup === grup)
+      .map(item => item.modul)
+  )].filter(Boolean);
+
+  modulsDelGrup.forEach(modul => {
+    const opt = document.createElement('option');
+    opt.value = modul;
+    opt.textContent = modul;
+    selectModul.appendChild(opt);
+  });
+
+  selectModul.disabled = false;
+}
+
+// Filtre INSTANTANI de UFs segons el Mòdul triat (Sense cap petició de xarxa)
+function enCanviarModul() {
+  const grup = document.getElementById('selectGrup').value;
+  const modul = document.getElementById('selectModul').value;
+  const selectUF = document.getElementById('selectUF');
+
+  selectUF.innerHTML = '<option value="">-- Selecciona UF --</option>';
+  selectUF.disabled = true;
+
+  if (!grup || !modul) return;
+
+  // Filtrar UFs en memòria
+  const ufsDelModul = estructuraEscola
+    .filter(item => item.grup === grup && item.modul === modul);
+
+  ufsDelModul.forEach(item => {
+    const opt = document.createElement('option');
+    opt.value = item.uf;
+    opt.textContent = item.nomUf ? `${item.uf} - ${item.nomUf}` : item.uf;
+    selectUF.appendChild(opt);
+  });
+
+  selectUF.disabled = false;
+}
+
 function canviarMode(mode) {
   currentMode = mode;
   
@@ -104,69 +195,6 @@ function canviarMode(mode) {
 
   document.getElementById('alumnesContainer').innerHTML = '';
   if (btnGuardar) btnGuardar.style.display = 'none';
-}
-
-function carregarGrups() {
-  callApi('getGrups')
-    .then(grups => {
-      const select = document.getElementById('selectGrup');
-      select.innerHTML = '<option value="">-- Selecciona Curs --</option>';
-      grups.forEach(grup => {
-        const opt = document.createElement('option');
-        opt.value = grup;
-        opt.textContent = grup;
-        select.appendChild(opt);
-      });
-    })
-    .catch(mostrarError);
-}
-
-function enCanviarGrup() {
-  const grup = document.getElementById('selectGrup').value;
-  const selectModul = document.getElementById('selectModul');
-  const selectUF = document.getElementById('selectUF');
-
-  selectModul.innerHTML = '<option value="">-- Selecciona Mòdul --</option>';
-  selectUF.innerHTML = '<option value="">-- Selecciona UF --</option>';
-  selectModul.disabled = true;
-  selectUF.disabled = true;
-
-  if (!grup) return;
-
-  callApi('getModulsPerGrup', { grup: grup })
-    .then(moduls => {
-      moduls.forEach(modul => {
-        const opt = document.createElement('option');
-        opt.value = modul;
-        opt.textContent = modul;
-        selectModul.appendChild(opt);
-      });
-      selectModul.disabled = false;
-    })
-    .catch(mostrarError);
-}
-
-function enCanviarModul() {
-  const grup = document.getElementById('selectGrup').value;
-  const modul = document.getElementById('selectModul').value;
-  const selectUF = document.getElementById('selectUF');
-
-  selectUF.innerHTML = '<option value="">-- Selecciona UF --</option>';
-  selectUF.disabled = true;
-
-  if (!grup || !modul) return;
-
-  callApi('getUFsPerModul', { grup: grup, modul: modul })
-    .then(ufs => {
-      ufs.forEach(uf => {
-        const opt = document.createElement('option');
-        opt.value = uf;
-        opt.textContent = uf;
-        selectUF.appendChild(opt);
-      });
-      selectUF.disabled = false;
-    })
-    .catch(mostrarError);
 }
 
 async function carregarAlumnesOAssistencies() {
