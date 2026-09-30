@@ -156,15 +156,32 @@ function enCanviarModul() {
 
   if (!grup || !modul || !Array.isArray(estructuraEscola)) return;
 
-  // Filtrar UFs en memòria
-  const ufsDelModul = estructuraEscola
-    .filter(item => item.grup === grup && item.modul === modul);
+  // Netegem espais dels valors seleccionats per evitar Incompatibilitats
+  const grupNet = String(grup).trim();
+  const modulNet = String(modul).trim();
+
+  // Filtrar UFs en memòria ignorant espais extres
+  const ufsDelModul = estructuraEscola.filter(item => {
+    return String(item.grup).trim() === grupNet && 
+           String(item.modul).trim() === modulNet;
+  });
+
+  if (ufsDelModul.length === 0) {
+    console.warn("No s'han trobat UFs per al grup i mòdul:", grupNet, modulNet);
+    return;
+  }
 
   ufsDelModul.forEach(item => {
     const opt = document.createElement('option');
-    opt.value = item.uf;
-    opt.textContent = item.nomUf ? `${item.uf} - ${item.nomUf}` : item.uf;
-    selectUF.appendChild(opt);
+    const valorUf = String(item.uf || '').trim();
+    const nomUf = String(item.nomUf || '').trim();
+
+    if (valorUf) {
+      opt.value = valorUf;
+      // Si té nom mostra "UF1 - Nom", si no mostra només "UF1"
+      opt.textContent = nomUf ? `${valorUf} - ${nomUf}` : valorUf;
+      selectUF.appendChild(opt);
+    }
   });
 
   selectUF.disabled = false;
