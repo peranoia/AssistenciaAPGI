@@ -72,7 +72,18 @@ function carregarEstructuraInicial() {
 
   callApi('getEstructuraCompleta')
     .then(data => {
-      estructuraEscola = data || [];
+      // Assegurem que obtenim un Array independentment del format de retorn
+      if (Array.isArray(data)) {
+        estructuraEscola = data;
+      } else if (data && Array.isArray(data.result)) {
+        estructuraEscola = data.result;
+      } else if (data && Array.isArray(data.data)) {
+        estructuraEscola = data.data;
+      } else {
+        console.error("Format de dades rebut no vàlid:", data);
+        estructuraEscola = [];
+      }
+
       poblarDesplegableGrups();
     })
     .catch(err => {
@@ -81,10 +92,14 @@ function carregarEstructuraInicial() {
     });
 }
 
-// Omnipresent: Pobla els grups únics de l'estructura descarregada
+// Pobla els grups únics de l'estructura descarregada
 function poblarDesplegableGrups() {
   const selectGrup = document.getElementById('selectGrup');
   selectGrup.innerHTML = '<option value="">-- Selecciona Curs --</option>';
+
+  if (!Array.isArray(estructuraEscola) || estructuraEscola.length === 0) {
+    return;
+  }
 
   // Extreure grups únics
   const grupsUnics = [...new Set(estructuraEscola.map(item => item.grup))].filter(Boolean);
@@ -97,7 +112,7 @@ function poblarDesplegableGrups() {
   });
 }
 
-// Filtre INSTANTANI de Mòduls segons el Grup triat (Sense cap petició de xarxa)
+// Filtre INSTANTANI de Mòduls segons el Grup triat
 function enCanviarGrup() {
   const grup = document.getElementById('selectGrup').value;
   const selectModul = document.getElementById('selectModul');
@@ -108,7 +123,7 @@ function enCanviarGrup() {
   selectModul.disabled = true;
   selectUF.disabled = true;
 
-  if (!grup) return;
+  if (!grup || !Array.isArray(estructuraEscola)) return;
 
   // Filtrar mòduls únics en memòria
   const modulsDelGrup = [...new Set(
@@ -127,7 +142,7 @@ function enCanviarGrup() {
   selectModul.disabled = false;
 }
 
-// Filtre INSTANTANI de UFs segons el Mòdul triat (Sense cap petició de xarxa)
+// Filtre INSTANTANI de UFs segons el Mòdul triat
 function enCanviarModul() {
   const grup = document.getElementById('selectGrup').value;
   const modul = document.getElementById('selectModul').value;
@@ -136,7 +151,7 @@ function enCanviarModul() {
   selectUF.innerHTML = '<option value="">-- Selecciona UF --</option>';
   selectUF.disabled = true;
 
-  if (!grup || !modul) return;
+  if (!grup || !modul || !Array.isArray(estructuraEscola)) return;
 
   // Filtrar UFs en memòria
   const ufsDelModul = estructuraEscola
