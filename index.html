@@ -76,11 +76,17 @@
     <!-- Tot el teu HTML actual de targetes, selectores i llista d'alumnes -->
   </div>
 
-  <!-- OVERLAY / SPINNER GLOBAL DE CÀRREGA -->
-<div id="loadingOverlay" class="loading-overlay" style="display: none;">
+<!-- OVERLAY / SPINNER GLOBAL DE CÀRREGA -->
+<div id="loading-overlay" class="loading-overlay hidden">
   <div class="loading-card">
     <div class="spinner"></div>
-    <p id="loadingMessage" class="loading-text">Carregant dades...</p>
+    <p id="loading-text" class="loading-text">Carregant dades...</p>
+    <p id="loading-subtext" class="loading-subtext"></p>
+
+    <!-- Contenidor de Logs per veure el progrés -->
+    <div class="loading-logs">
+      <div id="log-messages" class="log-messages"></div>
+    </div>
   </div>
 </div>
 
@@ -100,6 +106,10 @@
     backdrop-filter: blur(2px);
   }
 
+  .loading-overlay.hidden {
+    display: none !important;
+  }
+
   .loading-card {
     background: #ffffff;
     padding: 25px 35px;
@@ -108,8 +118,10 @@
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 15px;
-    min-width: 250px;
+    gap: 10px;
+    min-width: 280px;
+    max-width: 400px;
+    width: 90%;
   }
 
   .spinner {
@@ -128,11 +140,50 @@
 
   .loading-text {
     font-family: sans-serif;
-    font-size: 0.95rem;
+    font-size: 1rem;
     font-weight: 600;
     color: #333333;
     margin: 0;
     text-align: center;
+  }
+
+  .loading-subtext {
+    font-family: sans-serif;
+    font-size: 0.85rem;
+    color: #666666;
+    margin: 0;
+    text-align: center;
+  }
+
+  /* Àrea de missatges de logs */
+  .loading-logs {
+    width: 100%;
+    background-color: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 6px;
+    padding: 8px;
+    max-height: 110px;
+    overflow-y: auto;
+    text-align: left;
+    font-size: 0.8rem;
+    font-family: monospace;
+    box-sizing: border-box;
+    margin-top: 5px;
+  }
+
+  .log-messages p {
+    margin: 3px 0;
+    color: #475569;
+  }
+
+  .log-messages p.success {
+    color: #16a34a;
+    font-weight: bold;
+  }
+
+  .log-messages p.highlight {
+    color: #2563eb;
+    font-weight: bold;
   }
 </style>
 
