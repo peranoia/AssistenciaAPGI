@@ -1,4 +1,5 @@
 const API_URL = "https://script.google.com/macros/s/AKfycbymWjk3ZeeElIrJ7UnlldggvH2Lrkh0QHr59xCUZM8JTn-7XO3OdtxL-7sr1NY3y76g/exec";
+
 let currentMode = 'registrar'; // 'registrar' o 'modificar'
 let subModeAnterior = 'editar'; // 'editar' o 'crear' (per al mode registres anteriors)
 
@@ -77,24 +78,6 @@ async function callApi(action, params = {}, payload = null) {
   }
 }
 
-  if (payload) {
-    const options = {
-      method: 'POST',
-      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-      body: JSON.stringify({ action: action, ...payload })
-    };
-    const res = await fetch(API_URL, options);
-    const data = await res.json();
-    if (data.status === 'error') throw new Error(data.message || 'Error en la petició');
-    return data.result !== undefined ? data.result : data;
-  } else {
-    const res = await fetch(url);
-    const data = await res.json();
-    if (data.status === 'error') throw new Error(data.message || 'Error en la petició');
-    return data.result !== undefined ? data.result : data;
-  }
-}
-
 // Càrrega SIMULTÀNIA d'Estructura i Mapa de Qualificacions (Evita bloquejos de Google)
 function carregarDadesIniciais() {
   const selectGrup = document.getElementById('selectGrup');
@@ -152,6 +135,7 @@ function enCanviarGrup() {
 
   selectModul.innerHTML = '<option value="">-- Selecciona Mòdul --</option>';
   selectUF.innerHTML = '<option value="">-- Selecciona UF --</option>';
+
   selectModul.disabled = true;
   selectUF.disabled = true;
 
@@ -219,8 +203,9 @@ function canviarMode(mode) {
       btnGuardar.textContent = "Guardar Assistència";
       btnGuardar.className = "btn btn-success";
     }
+
     if (containerHores) containerHores.style.display = "block";
-    
+
     if (inputData) {
       inputData.value = today;
       inputData.disabled = true;
@@ -291,6 +276,7 @@ async function carregarAlumnesOAssistencies() {
 
   const container = document.getElementById('alumnesContainer');
   const infoContainer = document.getElementById('infoModeContainer');
+
   if (infoContainer) infoContainer.style.display = 'none';
 
   container.innerHTML = '<p style="text-align: center; color: #6b7280;">Carregant dades...</p>';
@@ -302,7 +288,7 @@ async function carregarAlumnesOAssistencies() {
       if (jaExisteix) {
         container.innerHTML = `
           <div style="background-color: #fef2f2; border: 1px solid #fca5a5; padding: 16px; border-radius: 8px; text-align: center; color: #991b1b; margin-top: 10px;">
-            <p style="margin: 0 0 8px 0; font-weight: bold; font-size: 1rem;">⚠️ Atenció: Classe ja registrada</p>
+            <p style="margin: 0 0 8px 0; font-weight: bold; font-size: 1rem;">⚠️️ Atenció: Classe ja registrada</p>
             <p style="margin: 0; font-size: 0.9rem;">Ja s'ha passat llista per a aquesta UF en la data d'avui.</p>
             <p style="margin: 8px 0 0 0; font-size: 0.85rem; color: #7f1d1d;">Si necessites fer cap canvi, utilitza l'opció superior <strong>"Registres Anteriors"</strong>.</p>
           </div>
@@ -327,7 +313,7 @@ async function carregarAlumnesOAssistencies() {
           infoContainer.innerHTML = 'ℹ️ <strong>S\'han carregat dades gravades anteriorment.</strong> Pots modificar-les (incloses les hores) i fer clic a "Actualitzar Registre".';
           infoContainer.style.display = 'block';
         }
-        
+
         // Ordenar també quan es carreguen registres per modificar
         if (Array.isArray(res.alumnes)) {
           res.alumnes.sort((a, b) => (a.nomComplet || '').localeCompare(b.nomComplet || '', 'ca', { sensitivity: 'base' }));
@@ -339,7 +325,7 @@ async function carregarAlumnesOAssistencies() {
           infoContainer.innerHTML = '📝 <strong>No hi ha assistència registrada per a aquesta data.</strong> Carregant alumnes per a crear un nou registre retroactiu.';
           infoContainer.style.display = 'block';
         }
-        
+
         const alumnesBase = Array.isArray(res.alumnes) ? res.alumnes : await callApi('getAlumnesBase', { grupSolicitat: grup });
         const alumnesFiltrats = filtrarAlumnesPendents(alumnesBase, modul, uf, grup);
         renderitzadorAlumnesNoves(alumnesFiltrats);
