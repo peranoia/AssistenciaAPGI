@@ -46,6 +46,37 @@ async function callApi(action, params = {}, payload = null) {
     }
   }
 
+  try {
+    let res;
+    if (payload) {
+      res = await fetch(API_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify({ action: action, ...payload })
+      });
+    } else {
+      res = await fetch(url);
+    }
+
+    const text = await res.text(); // Llegim com a text primer per seguretat
+
+    let data;
+    try {
+      data = JSON.parse(text);
+    } catch (e) {
+      console.error("❌ La resposta de Google no és un JSON vàlid:", text);
+      throw new Error("El servidor de Google ha retornat una resposta no vàlida (HTML/Error). Revisa la consola.");
+    }
+
+    if (data.status === 'error') throw new Error(data.message || 'Error en la petició');
+    return data.result !== undefined ? data.result : data;
+
+  } catch (err) {
+    console.error(`Error a la crida API [${action}]:`, err);
+    throw err;
+  }
+}
+
   if (payload) {
     const options = {
       method: 'POST',
