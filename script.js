@@ -98,6 +98,7 @@ function carregarEstructuraInicial() {
 
 // Carrega tot el mapa de qualificacions una sola vegada en memòria
 function carregarMapaQualificacions() {
+  console.log("Iniciant la descàrrega del mapa de qualificacions...");
   callApi('getMapaQualificacions')
     .then(mapa => {
       mapaQualificacions = mapa || {};
