@@ -250,23 +250,37 @@ function canviarMode(mode) {
 
 // FILTRATGE I ORDENACIÓ DE PENDENTS
 function filtrarAlumnesPendents(llistaAlumnes, modul, uf, grupSolicitat) {
-  if (!Array.isArray(llistaAlumnes)) return [];
+  if (!Array.isArray(llistaAlumnes)) {
+    console.warn("⚠️ llistaAlumnes no és un Array vàlid:", llistaAlumnes);
+    return [];
+  }
+
+  const normalitzar = (str) => str ? String(str).trim().toLowerCase() : '';
 
   const pendents = llistaAlumnes.filter(alumne => {
     const clau = alumne.id + '_' + modul + '_' + uf;
     const dadesQ = mapaQualificacions[clau];
 
+    // 1. Comprovació de nota aprobada
     if (dadesQ && dadesQ.nota !== undefined && dadesQ.nota !== null && dadesQ.nota !== '') {
       const textNota = String(dadesQ.nota).replace(',', '.').trim();
       const valNota = parseFloat(textNota);
 
       if (!isNaN(valNota) && valNota >= 5) {
+        // Alumne aprovat en aquesta UF -> Es descarta
         return false;
       }
     }
 
-    if (alumne.grup === grupSolicitat || (dadesQ && dadesQ.grupAssignat === grupSolicitat)) {
-      return true;
+    // 2. Comprovació de coincidència de grup (flexible)
+    const grupAlumne = normalitzar(alumne.grup);
+    const grupCercat = normalitzar(grupSolicitat);
+    const grupAssignatQ = dadesQ ? normalitzar(dadesQ.grupAssignat) : '';
+
+    // Si l'alumne no té grup definit a la llista base, el deixem passar per defecte.
+    // Si té grup, comprovem que coincideixi amb el del desplegable.
+    if (grupAlumne && grupAlumne !== grupCercat && grupAssignatQ !== grupCercat) {
+      return false;
     }
 
     return true;
@@ -322,7 +336,13 @@ async function carregarAlumnesOAssistencies() {
 
       } else {
         const alumnesBase = await callApi('getAlumnesBase', { grupSolicitat: grup });
+        
+        console.log("🔍 Alumnes de base rebuts des del servidor:", alumnesBase);
+        console.log("🔍 Grup sol·licitat:", grup);
+
         const alumnesFiltrats = filtrarAlumnesPendents(alumnesBase, modul, uf, grup);
+        console.log("✅ Alumnes finals filtrats:", alumnesFiltrats.length);
+
         renderitzadorAlumnesNoves(alumnesFiltrats);
       }
     } else {
@@ -428,12 +448,16 @@ function crearTargetaAlumne(idAlumne, nomComplet, estatActual, esMenor, esSegon,
   nameSpan.textContent = nomComplet;
   header.appendChild(nameSpan);
 
+  // Contenidor per si l'alumne porta més d'un badge
+  const badgesContainer = document.createElement('div');
+  badgesContainer.className = 'badges-container';
+
   // Badge per alumne MENOR
   if (esMenor) {
     const badgeMenor = document.createElement('span');
     badgeMenor.className = 'badge-menor';
     badgeMenor.textContent = 'MENOR';
-    header.appendChild(badgeMenor);
+    badgesContainer.appendChild(badgeMenor);
   }
 
   // Badge per alumne de SEGON CURS
@@ -441,7 +465,11 @@ function crearTargetaAlumne(idAlumne, nomComplet, estatActual, esMenor, esSegon,
     const badgeSegon = document.createElement('span');
     badgeSegon.className = 'badge-segon';
     badgeSegon.textContent = '2n';
-    header.appendChild(badgeSegon);
+    badgesContainer.appendChild(badgeSegon);
+  }
+
+  if (badgesContainer.children.length > 0) {
+    header.appendChild(badgesContainer);
   }
 
   const statusDiv = document.createElement('div');
