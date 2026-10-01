@@ -7,6 +7,54 @@ let subModeAnterior = 'editar'; // 'editar' o 'crear' (per al mode registres ant
 let estructuraEscola = [];
 let mapaQualificacions = {};
 
+// =======================================================
+// FUNCIONS DE CONTROL DE L'OVERLAY DE CÀRREGA I LOGS
+// =======================================================
+
+function mostrarLoading(missatgeInicial = "Carregant...", subtext = "") {
+  const overlay = document.getElementById("loading-overlay");
+  const textEl = document.getElementById("loading-text");
+  const subtextEl = document.getElementById("loading-subtext");
+  const logsEl = document.getElementById("log-messages");
+
+  if (textEl) textEl.textContent = missatgeInicial;
+  if (subtextEl) subtextEl.textContent = subtext;
+  if (logsEl) logsEl.innerHTML = ""; // Neteja els logs anteriors
+  if (overlay) overlay.classList.remove("hidden");
+}
+
+function ocultarLoading() {
+  const overlay = document.getElementById("loading-overlay");
+  if (overlay) overlay.classList.add("hidden");
+}
+
+function actualitzarTextLoading(missatge, subtext = "") {
+  const textEl = document.getElementById("loading-text");
+  const subtextEl = document.getElementById("loading-subtext");
+  if (textEl) textEl.textContent = missatge;
+  if (subtextEl) subtextEl.textContent = subtext;
+}
+
+function afegirLogLoading(missatge, tipus = "normal") {
+  const logsEl = document.getElementById("log-messages");
+  if (!logsEl) return;
+
+  const p = document.createElement("p");
+  p.textContent = `> ${missatge}`;
+  if (tipus === "success") p.classList.add("success");
+  if (tipus === "highlight") p.classList.add("highlight");
+
+  logsEl.appendChild(p);
+
+  // Scroll automàtic cap al darrer log
+  const parent = logsEl.parentElement;
+  if (parent) parent.scrollTop = parent.scrollHeight;
+}
+
+// =======================================================
+// INICIALITZACIÓ
+// =======================================================
+
 window.addEventListener('DOMContentLoaded', () => {
   // Data d'avui per defecte
   const today = getTodayFormatted();
@@ -274,7 +322,6 @@ function canviarMode(mode) {
 }
 
 // FILTRATGE I ORDENACIÓ DE PENDENTS
-// FILTRATGE I ORDENACIÓ DE PENDENTS
 function filtrarAlumnesPendents(llistaAlumnes, modul, uf, grupSolicitat) {
   if (!Array.isArray(llistaAlumnes)) {
     console.warn("⚠️ llistaAlumnes no és un Array vàlid:", llistaAlumnes);
@@ -439,7 +486,6 @@ function renderitzadorAlumnesNoves(alumnes) {
   }
 
   alumnes.forEach(al => {
-    // Comprovem si és de segon curs (accepta propietats com esSegon, curs === 2 o curs === '2')
     const esSegon = Boolean(al.esSegon || al.curs == 2);
     const card = crearTargetaAlumne(al.id, al.nomComplet, 'Pres.', al.esMenor, esSegon, null);
     container.appendChild(card);
@@ -492,11 +538,9 @@ function crearTargetaAlumne(idAlumne, nomComplet, estatActual, esMenor, esSegon,
   nameSpan.textContent = nomComplet;
   header.appendChild(nameSpan);
 
-  // Contenidor per si l'alumne porta més d'un badge
   const badgesContainer = document.createElement('div');
   badgesContainer.className = 'badges-container';
 
-  // Badge per alumne MENOR
   if (esMenor) {
     const badgeMenor = document.createElement('span');
     badgeMenor.className = 'badge-menor';
@@ -504,7 +548,6 @@ function crearTargetaAlumne(idAlumne, nomComplet, estatActual, esMenor, esSegon,
     badgesContainer.appendChild(badgeMenor);
   }
 
-  // Badge per alumne de SEGON CURS
   if (esSegon) {
     const badgeSegon = document.createElement('span');
     badgeSegon.className = 'badge-segon';
@@ -646,47 +689,4 @@ function mostrarError(error) {
   } else {
     alert("S'ha produït un error: " + missatge);
   }
-}
-// =======================================================
-// FUNCIONS DE CONTROL DE L'OVERLAY DE CÀRREGA I LOGS
-// =======================================================
-
-function mostrarLoading(missatgeInicial = "Carregant...", subtext = "") {
-  const overlay = document.getElementById("loading-overlay");
-  const textEl = document.getElementById("loading-text");
-  const subtextEl = document.getElementById("loading-subtext");
-  const logsEl = document.getElementById("log-messages");
-
-  if (textEl) textEl.textContent = missatgeInicial;
-  if (subtextEl) subtextEl.textContent = subtext;
-  if (logsEl) logsEl.innerHTML = ""; // Neteja els logs anteriors
-  if (overlay) overlay.classList.remove("hidden");
-}
-
-function ocultarLoading() {
-  const overlay = document.getElementById("loading-overlay");
-  if (overlay) overlay.classList.add("hidden");
-}
-
-function actualitzarTextLoading(missatge, subtext = "") {
-  const textEl = document.getElementById("loading-text");
-  const subtextEl = document.getElementById("loading-subtext");
-  if (textEl) textEl.textContent = missatge;
-  if (subtextEl) subtextEl.textContent = subtext;
-}
-
-function afegirLogLoading(missatge, tipus = "normal") {
-  const logsEl = document.getElementById("log-messages");
-  if (!logsEl) return;
-
-  const p = document.createElement("p");
-  p.textContent = `> ${missatge}`;
-  if (tipus === "success") p.classList.add("success");
-  if (tipus === "highlight") p.classList.add("highlight");
-
-  logsEl.appendChild(p);
-
-  // Scroll automàtic cap al darrer log
-  const parent = logsEl.parentElement;
-  if (parent) parent.scrollTop = parent.scrollHeight;
 }
