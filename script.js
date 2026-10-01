@@ -249,6 +249,7 @@ function canviarMode(mode) {
 }
 
 // FILTRATGE I ORDENACIÓ DE PENDENTS
+// FILTRATGE I ORDENACIÓ DE PENDENTS
 function filtrarAlumnesPendents(llistaAlumnes, modul, uf, grupSolicitat) {
   if (!Array.isArray(llistaAlumnes)) {
     console.warn("⚠️ llistaAlumnes no és un Array vàlid:", llistaAlumnes);
@@ -261,25 +262,43 @@ function filtrarAlumnesPendents(llistaAlumnes, modul, uf, grupSolicitat) {
     const clau = alumne.id + '_' + modul + '_' + uf;
     const dadesQ = mapaQualificacions[clau];
 
-    // 1. Comprovació de nota aprobada
+    // 1. Comprovació de nota aprovada
     if (dadesQ && dadesQ.nota !== undefined && dadesQ.nota !== null && dadesQ.nota !== '') {
       const textNota = String(dadesQ.nota).replace(',', '.').trim();
-      const valNota = parseFloat(textNota);
-
-      if (!isNaN(valNota) && valNota >= 5) {
-        // Alumne aprovat en aquesta UF -> Es descarta
-        return false;
+      
+      // Si diu "Pendent", "No presentat", etc., NO està aprovat
+      if (textNota.toLowerCase() !== 'pendent') {
+        const valNota = parseFloat(textNota);
+        if (!isNaN(valNota) && valNota >= 5) {
+          // Alumne aprovat en aquesta UF -> Es descarta
+          return false;
+        }
       }
     }
 
     // 2. Comprovació de coincidència de grup (flexible)
-    const grupAlumne = normalitzar(alumne.grup);
+    const grupAlumne = normalitzar(alumne.grup || alumne.grupBase);
+    const subgrupAlumne = normalitzar(alumne.subgrup);
     const grupCercat = normalitzar(grupSolicitat);
-    const grupAssignatQ = dadesQ ? normalitzar(dadesQ.grupAssignat) : '';
+
+    // Mètodes de grup que pot portar el registre de Qualificacions
+    const grupPendentQ = dadesQ ? normalitzar(dadesQ.grupUFsPendentsPrimer || dadesQ.grupPendent || dadesQ.grupAssignat) : '';
+
+    // Si té una UF assignada expressament a aquest grup (ex: alumne de 2n amb pendent de 1er A) -> S'inclou!
+    if (grupPendentQ && grupPendentQ === grupCercat) {
+      return true;
+    }
 
     // Si l'alumne no té grup definit a la llista base, el deixem passar per defecte.
-    // Si té grup, comprovem que coincideixi amb el del desplegable.
-    if (grupAlumne && grupAlumne !== grupCercat && grupAssignatQ !== grupCercat) {
+    if (!grupAlumne) {
+      return true;
+    }
+
+    // Comprovació combinada de grup/subgrup de l'alumne (Ex: "1er" + "a" = "1er a")
+    const grupCombinat = (grupAlumne + ' ' + subgrupAlumne).trim();
+
+    // Si ni el seu grup principal, ni el seu grup combinat, ni la qualificació coincideixen -> Es descarta
+    if (grupAlumne !== grupCercat && grupCombinat !== grupCercat && grupPendentQ !== grupCercat) {
       return false;
     }
 
