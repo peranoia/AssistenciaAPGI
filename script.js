@@ -2,23 +2,21 @@ const API_URL = "https://script.google.com/macros/s/AKfycbymWjk3ZeeElIrJ7Unlldgg
 let currentMode = 'registrar'; // 'registrar' o 'modificar'
 let subModeAnterior = 'editar'; // 'editar' o 'crear' (per al mode registres anteriors)
 
-// Variable global per emmagatzemar l'estructura de la plantilla en memòria
+// Variables globals en memòria
 let estructuraEscola = [];
-// Variable global per emmagatzemar el mapa de qualificacions en memòria
 let mapaQualificacions = {};
 
 window.addEventListener('DOMContentLoaded', () => {
   // Data d'avui per defecte
   const today = getTodayFormatted();
   const inputData = document.getElementById('inputData');
-  if (inputData) inputData.value = today;
+  if (inputData) {
+    inputData.value = today;
+    inputData.disabled = true; // En mode registrar, bloquejat a avui
+  }
 
-  // En mode registrar, la data queda bloquejada a avui
-  if (inputData) inputData.disabled = true;
-
-  // Carreguem l'estructura completa i les qualificacions al principi d'una sola vegada
-  carregarEstructuraInicial();
-  carregarMapaQualificacions();
+  // Carreguem Estructura i Mapa de Qualificacions simultàniament amb Promise.all
+  carregarDadesIniciais();
 
   // Assignació d'esdeveniments
   document.getElementById('selectGrup').addEventListener('change', enCanviarGrup);
@@ -49,7 +47,6 @@ async function callApi(action, params = {}, payload = null) {
   }
 
   if (payload) {
-    // Si enviem dades (POST)
     const options = {
       method: 'POST',
       headers: { 'Content-Type': 'text/plain;charset=utf-8' },
@@ -60,7 +57,6 @@ async function callApi(action, params = {}, payload = null) {
     if (data.status === 'error') throw new Error(data.message || 'Error en la petició');
     return data.result !== undefined ? data.result : data;
   } else {
-    // Si només llegim dades (GET)
     const res = await fetch(url);
     const data = await res.json();
     if (data.status === 'error') throw new Error(data.message || 'Error en la petició');
@@ -68,48 +64,36 @@ async function callApi(action, params = {}, payload = null) {
   }
 }
 
-// Carrega TOTA l'estructura de grups, mòduls i UFs al principi
-function carregarEstructuraInicial() {
+// Càrrega SIMULTÀNIA d'Estructura i Mapa de Qualificacions (Evita bloquejos de Google)
+function carregarDadesIniciais() {
   const selectGrup = document.getElementById('selectGrup');
   if (selectGrup) selectGrup.innerHTML = '<option value="">Carregant opcions...</option>';
 
-  callApi('getEstructuraCompleta')
-    .then(data => {
-      console.log("Dades rebudes de getEstructuraCompleta:", data);
+  console.log("🔄 Carregant dades inicials (Estructura i Qualificacions)...");
 
-      let llista = data;
-      if (data && data.result) llista = data.result;
-      if (data && data.data) llista = data.data;
+  Promise.all([
+    callApi('getEstructuraCompleta'),
+    callApi('getMapaQualificacions')
+  ])
+  .then(([dataEstructura, dataMapa]) => {
+    // 1. Processar Estructura
+    let llista = dataEstructura;
+    if (dataEstructura && dataEstructura.result) llista = dataEstructura.result;
+    if (dataEstructura && dataEstructura.data) llista = dataEstructura.data;
 
-      if (Array.isArray(llista)) {
-        estructuraEscola = llista;
-      } else {
-        console.error("No s'ha rebut un Array vàlid de l'API. Contingut:", data);
-        estructuraEscola = [];
-      }
+    estructuraEscola = Array.isArray(llista) ? llista : [];
+    console.log("✅ Estructura carregada:", estructuraEscola.length, "registres.");
+    poblarDesplegableGrups();
 
-      poblarDesplegableGrups();
-    })
-    .catch(err => {
-      mostrarError(err);
-      if (selectGrup) selectGrup.innerHTML = '<option value="">Error carregant opcions</option>';
-    });
-}
-
-// Carrega tot el mapa de qualificacions una sola vegada en memòria
-function carregarMapaQualificacions() {
-  console.log("Iniciant la descàrrega del mapa de qualificacions...");
-  
-  callApi('getMapaQualificacions')
-    .then(mapa => {
-      console.log("Resposta bruta rebuda de getMapaQualificacions:", mapa);
-      mapaQualificacions = mapa || {};
-      console.log("✅ Mapa de qualificacions carregat en memòria amb èxit. Registres:", Object.keys(mapaQualificacions).length);
-    })
-    .catch(err => {
-      console.error("❌ ERROR en carregar el mapa de qualificacions:", err);
-      mapaQualificacions = {};
-    });
+    // 2. Processar Mapa de Qualificacions
+    mapaQualificacions = dataMapa || {};
+    console.log("✅ Mapa de qualificacions carregat en memòria. Registres:", Object.keys(mapaQualificacions).length);
+  })
+  .catch(err => {
+    console.error("❌ Error en la càrrega inicial:", err);
+    mostrarError(err);
+    if (selectGrup) selectGrup.innerHTML = '<option value="">Error carregant opcions</option>';
+  });
 }
 
 // Pobla els grups únics de l'estructura descarregada
@@ -117,9 +101,7 @@ function poblarDesplegableGrups() {
   const selectGrup = document.getElementById('selectGrup');
   selectGrup.innerHTML = '<option value="">-- Selecciona Curs --</option>';
 
-  if (!Array.isArray(estructuraEscola) || estructuraEscola.length === 0) {
-    return;
-  }
+  if (!Array.isArray(estructuraEscola) || estructuraEscola.length === 0) return;
 
   const grupsUnics = [...new Set(estructuraEscola.map(item => item.grup))].filter(Boolean);
 
@@ -228,32 +210,41 @@ function canviarMode(mode) {
   if (btnGuardar) btnGuardar.style.display = 'none';
 }
 
-// Filtra la llista d'alumnes en memòria segons el mòdul, la UF i les qualificacions
+// FILTRATGE I ORDENACIÓ CORREGITS
 function filtrarAlumnesPendents(llistaAlumnes, modul, uf, grupSolicitat) {
   if (!Array.isArray(llistaAlumnes)) return [];
 
-  return llistaAlumnes.filter(alumne => {
+  // 1. Filtrar alumnes que no tinguin la UF aprovada (nota < 5 o sense nota)
+  const pendents = llistaAlumnes.filter(alumne => {
     const clau = alumne.id + '_' + modul + '_' + uf;
     const dadesQ = mapaQualificacions[clau];
 
-    // 1. SI TÉ NOTA I ÉS >= 5 (APROVAT) -> ES DESCARTA
     if (dadesQ && dadesQ.nota !== undefined && dadesQ.nota !== null && dadesQ.nota !== '') {
       const textNota = String(dadesQ.nota).replace(',', '.').trim();
       const valNota = parseFloat(textNota);
 
+      // Si té una nota numèrica vàlida i és >= 5, Està APROVAT -> El descartem (false)
       if (!isNaN(valNota) && valNota >= 5) {
-        return false; // Alumne aprovat, no s'inclou
+        return false;
       }
     }
 
-    // 2. SI ÉS UN ALUMNE D'UN ALTRE GRUP AMB LA UF PENDENT ASSIGNADA AQUEST GRUP -> S'INCLOU
-    if (dadesQ && dadesQ.grupAssignat === grupSolicitat) {
+    // Si pertany al grup demanat o té la UF assignada a aquest grup, S'INCLOU
+    if (alumne.grup === grupSolicitat || (dadesQ && dadesQ.grupAssignat === grupSolicitat)) {
       return true;
     }
 
-    // 3. SI ÉS DEL GRUP CORRESPONENT I NO ESTÀ APROVAT -> S'INCLOU
     return true;
   });
+
+  // 2. Ordenar alfabèticament pel Nom/Cognoms
+  pendents.sort((a, b) => {
+    const nomA = a.nomComplet || a.nom || '';
+    const nomB = b.nomComplet || b.nom || '';
+    return nomA.localeCompare(nomB, 'ca', { sensitivity: 'base' });
+  });
+
+  return pendents;
 }
 
 async function carregarAlumnesOAssistencies() {
@@ -287,9 +278,7 @@ async function carregarAlumnesOAssistencies() {
         `;
         document.getElementById('btnGuardar').style.display = 'none';
       } else {
-        // Càrrega ultra ràpida de la llista base d'alumnes
         const alumnesBase = await callApi('getAlumnesBase', { grupSolicitat: grup });
-        // Filtratge instantani en memòria
         const alumnesFiltrats = filtrarAlumnesPendents(alumnesBase, modul, uf, grup);
         renderitzadorAlumnesNoves(alumnesFiltrats);
       }
@@ -307,6 +296,11 @@ async function carregarAlumnesOAssistencies() {
           infoContainer.innerHTML = 'ℹ️ <strong>S\'han carregat dades gravades anteriorment.</strong> Pots modificar-les (incloses les hores) i fer clic a "Actualitzar Registre".';
           infoContainer.style.display = 'block';
         }
+        
+        // Ordenar també quan es carreguen registres per modificar
+        if (Array.isArray(res.alumnes)) {
+          res.alumnes.sort((a, b) => (a.nomComplet || '').localeCompare(b.nomComplet || '', 'ca', { sensitivity: 'base' }));
+        }
         renderitzadorAlumnesModificar(res.alumnes);
       } else {
         subModeAnterior = 'crear';
@@ -315,7 +309,6 @@ async function carregarAlumnesOAssistencies() {
           infoContainer.style.display = 'block';
         }
         
-        // Si venim de 'getAssistenciesOAlumnesPerData' i no existeix, o bé peticionem els alumnes base filtrats:
         const alumnesBase = Array.isArray(res.alumnes) ? res.alumnes : await callApi('getAlumnesBase', { grupSolicitat: grup });
         const alumnesFiltrats = filtrarAlumnesPendents(alumnesBase, modul, uf, grup);
         renderitzadorAlumnesNoves(alumnesFiltrats);
@@ -332,7 +325,7 @@ function renderitzadorAlumnesNoves(alumnes) {
   container.innerHTML = '';
 
   if (!alumnes || alumnes.length === 0) {
-    container.innerHTML = '<p style="text-align: center;">No s\'han trobat alumnes matriculats per a aquesta UF.</p>';
+    container.innerHTML = '<p style="text-align: center;">No s\'han trobat alumnes matriculats o tots tenen la UF aprovada.</p>';
     btnGuardar.style.display = 'none';
     return;
   }
