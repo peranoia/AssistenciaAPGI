@@ -647,20 +647,46 @@ function mostrarError(error) {
     alert("S'ha produït un error: " + missatge);
   }
 }
+// =======================================================
+// FUNCIONS DE CONTROL DE L'OVERLAY DE CÀRREGA I LOGS
+// =======================================================
 
-// Funcions de control de l'overlay de càrrega
-function mostrarCarregant(missatge = 'Carregant...') {
-  const overlay = document.getElementById('loadingOverlay');
-  const txtMsg = document.getElementById('loadingMessage');
-  if (overlay && txtMsg) {
-    txtMsg.innerText = missatge;
-    overlay.style.display = 'flex';
-  }
+function mostrarLoading(missatgeInicial = "Carregant...", subtext = "") {
+  const overlay = document.getElementById("loading-overlay");
+  const textEl = document.getElementById("loading-text");
+  const subtextEl = document.getElementById("loading-subtext");
+  const logsEl = document.getElementById("log-messages");
+
+  if (textEl) textEl.textContent = missatgeInicial;
+  if (subtextEl) subtextEl.textContent = subtext;
+  if (logsEl) logsEl.innerHTML = ""; // Neteja els logs anteriors
+  if (overlay) overlay.classList.remove("hidden");
 }
 
-function ocultarCarregant() {
-  const overlay = document.getElementById('loadingOverlay');
-  if (overlay) {
-    overlay.style.display = 'none';
-  }
+function ocultarLoading() {
+  const overlay = document.getElementById("loading-overlay");
+  if (overlay) overlay.classList.add("hidden");
+}
+
+function actualitzarTextLoading(missatge, subtext = "") {
+  const textEl = document.getElementById("loading-text");
+  const subtextEl = document.getElementById("loading-subtext");
+  if (textEl) textEl.textContent = missatge;
+  if (subtextEl) subtextEl.textContent = subtext;
+}
+
+function afegirLogLoading(missatge, tipus = "normal") {
+  const logsEl = document.getElementById("log-messages");
+  if (!logsEl) return;
+
+  const p = document.createElement("p");
+  p.textContent = `> ${missatge}`;
+  if (tipus === "success") p.classList.add("success");
+  if (tipus === "highlight") p.classList.add("highlight");
+
+  logsEl.appendChild(p);
+
+  // Scroll automàtic cap al darrer log
+  const parent = logsEl.parentElement;
+  if (parent) parent.scrollTop = parent.scrollHeight;
 }
