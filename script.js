@@ -96,28 +96,53 @@ function carregarDadesIniciais() {
 
   console.log("🔄 Carregant dades inicials (Estructura i Qualificacions)...");
 
+  // 1. Mostrem l'overlay de càrrega i iniciem els logs
+  mostrarLoading("Carregant dades inicials...", "Sincronitzant amb el servidor");
+  afegirLogLoading("Iniciant petició simultània d'estructura i qualificacions...");
+
   Promise.all([
     callApi('getEstructuraCompleta'),
     callApi('getMapaQualificacions')
   ])
   .then(([dataEstructura, dataMapa]) => {
-    // 1. Processar Estructura
+    // 2. Processar Estructura
+    actualitzarTextLoading("Processant dades...", "Generant estructura de l'escola");
+    
     let llista = dataEstructura;
     if (dataEstructura && dataEstructura.result) llista = dataEstructura.result;
     if (dataEstructura && dataEstructura.data) llista = dataEstructura.data;
 
     estructuraEscola = Array.isArray(llista) ? llista : [];
     console.log("✅ Estructura carregada:", estructuraEscola.length, "registres.");
+    afegirLogLoading(`Estructura carregada: ${estructuraEscola.length} registres.`, "success");
+
     poblarDesplegableGrups();
 
-    // 2. Processar Mapa de Qualificacions
+    // 3. Processar Mapa de Qualificacions
     mapaQualificacions = dataMapa || {};
-    console.log("✅ Mapa de qualificacions carregat en memòria. Registres:", Object.keys(mapaQualificacions).length);
+    const totalQualificacions = Object.keys(mapaQualificacions).length;
+    console.log("✅ Mapa de qualificacions carregat en memòria. Registres:", totalQualificacions);
+    afegirLogLoading(`Mapa de qualificacions carregat: ${totalQualificacions} alumnes.`, "success");
+
+    afegirLogLoading("Totes les dades s'han carregat correctament.", "highlight");
+
+    // Deixem 400ms perquè l'usuari pugui llegir el log de confirmació abans de tancar
+    setTimeout(() => {
+      ocultarLoading();
+    }, 400);
   })
   .catch(err => {
     console.error("❌ Error en la càrrega inicial:", err);
+    afegirLogLoading(`Error en la càrrega: ${err.message || err}`, "highlight");
+    actualitzarTextLoading("Error de càrrega", "No s'han pogut obtenir les dades");
+    
     mostrarError(err);
     if (selectGrup) selectGrup.innerHTML = '<option value="">Error carregant opcions</option>';
+
+    // En cas d'error ho deixem 1.5s visible perquè es pugui llegir l'error
+    setTimeout(() => {
+      ocultarLoading();
+    }, 1500);
   });
 }
 
@@ -620,5 +645,22 @@ function mostrarError(error) {
     alert("⚠️ ATENCIÓ: REGISTRE DUPLICAT\n\n" + textNetejat);
   } else {
     alert("S'ha produït un error: " + missatge);
+  }
+}
+
+// Funcions de control de l'overlay de càrrega
+function mostrarCarregant(missatge = 'Carregant...') {
+  const overlay = document.getElementById('loadingOverlay');
+  const txtMsg = document.getElementById('loadingMessage');
+  if (overlay && txtMsg) {
+    txtMsg.innerText = missatge;
+    overlay.style.display = 'flex';
+  }
+}
+
+function ocultarCarregant() {
+  const overlay = document.getElementById('loadingOverlay');
+  if (overlay) {
+    overlay.style.display = 'none';
   }
 }
