@@ -99,13 +99,15 @@ function carregarEstructuraInicial() {
 // Carrega tot el mapa de qualificacions una sola vegada en memòria
 function carregarMapaQualificacions() {
   console.log("Iniciant la descàrrega del mapa de qualificacions...");
+  
   callApi('getMapaQualificacions')
     .then(mapa => {
+      console.log("Resposta bruta rebuda de getMapaQualificacions:", mapa);
       mapaQualificacions = mapa || {};
-      console.log("Mapa de qualificacions carregat en memòria:", Object.keys(mapaQualificacions).length);
+      console.log("✅ Mapa de qualificacions carregat en memòria amb èxit. Registres:", Object.keys(mapaQualificacions).length);
     })
     .catch(err => {
-      console.warn("No s'ha pogut carregar el mapa de qualificacions:", err);
+      console.error("❌ ERROR en carregar el mapa de qualificacions:", err);
       mapaQualificacions = {};
     });
 }
