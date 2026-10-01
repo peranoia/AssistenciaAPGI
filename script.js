@@ -375,7 +375,9 @@ function renderitzadorAlumnesNoves(alumnes) {
   }
 
   alumnes.forEach(al => {
-    const card = crearTargetaAlumne(al.id, al.nomComplet, 'Pres.', al.esMenor, null);
+    // Comprovem si és de segon curs (accepta propietats com esSegon, curs === 2 o curs === '2')
+    const esSegon = Boolean(al.esSegon || al.curs == 2);
+    const card = crearTargetaAlumne(al.id, al.nomComplet, 'Pres.', al.esMenor, esSegon, null);
     container.appendChild(card);
   });
 
@@ -400,7 +402,8 @@ function renderitzadorAlumnesModificar(registres) {
   }
 
   registres.forEach(reg => {
-    const card = crearTargetaAlumne(reg.idAlumne, reg.nomComplet, reg.estat, reg.esMenor, reg.idRegistre);
+    const esSegon = Boolean(reg.esSegon || reg.curs == 2);
+    const card = crearTargetaAlumne(reg.idAlumne, reg.nomComplet, reg.estat, reg.esMenor, esSegon, reg.idRegistre);
     container.appendChild(card);
   });
 
@@ -411,7 +414,7 @@ function renderitzadorAlumnesModificar(registres) {
   }
 }
 
-function crearTargetaAlumne(idAlumne, nomComplet, estatActual, esMenor, idRegistre) {
+function crearTargetaAlumne(idAlumne, nomComplet, estatActual, esMenor, esSegon, idRegistre) {
   const card = document.createElement('div');
   card.className = 'student-card';
   card.setAttribute('data-id-alumne', idAlumne);
@@ -425,11 +428,20 @@ function crearTargetaAlumne(idAlumne, nomComplet, estatActual, esMenor, idRegist
   nameSpan.textContent = nomComplet;
   header.appendChild(nameSpan);
 
+  // Badge per alumne MENOR
   if (esMenor) {
-    const badge = document.createElement('span');
-    badge.className = 'badge-menor';
-    badge.textContent = 'MENOR';
-    header.appendChild(badge);
+    const badgeMenor = document.createElement('span');
+    badgeMenor.className = 'badge-menor';
+    badgeMenor.textContent = 'MENOR';
+    header.appendChild(badgeMenor);
+  }
+
+  // Badge per alumne de SEGON CURS
+  if (esSegon) {
+    const badgeSegon = document.createElement('span');
+    badgeSegon.className = 'badge-segon';
+    badgeSegon.textContent = '2n';
+    header.appendChild(badgeSegon);
   }
 
   const statusDiv = document.createElement('div');
