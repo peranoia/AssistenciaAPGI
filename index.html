@@ -76,14 +76,14 @@
     <!-- Tot el teu HTML actual de targetes, selectores i llista d'alumnes -->
   </div>
 
-<!-- OVERLAY / SPINNER GLOBAL DE CÀRREGA -->
+<!-- OVERLAY DE CÀRREGA GLOBAL -->
 <div id="loading-overlay" class="loading-overlay hidden">
   <div class="loading-card">
     <div class="spinner"></div>
     <p id="loading-text" class="loading-text">Carregant dades...</p>
     <p id="loading-subtext" class="loading-subtext"></p>
 
-    <!-- Contenidor de Logs per veure el progrés -->
+    <!-- Contenidor de logs de progrés -->
     <div class="loading-logs">
       <div id="log-messages" class="log-messages"></div>
     </div>
@@ -91,100 +91,102 @@
 </div>
 
 <style>
-  /* Estils per a la pantalla de càrrega */
-  .loading-overlay {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100vw;
-    height: 100vh;
-    background-color: rgba(0, 0, 0, 0.5); /* Fons fosc semitransparent */
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    z-index: 9999; /* Es mostra per sobre de tot */
-    backdrop-filter: blur(2px);
-  }
+ /* Overlay i fons */
+.loading-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 9999;
+  backdrop-filter: blur(2px);
+}
 
-  .loading-overlay.hidden {
-    display: none !important;
-  }
+/* Control d'amagar l'overlay */
+.loading-overlay.hidden {
+  display: none !important;
+}
 
-  .loading-card {
-    background: #ffffff;
-    padding: 25px 35px;
-    border-radius: 12px;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 10px;
-    min-width: 280px;
-    max-width: 400px;
-    width: 90%;
-  }
+.loading-card {
+  background: #ffffff;
+  padding: 25px 35px;
+  border-radius: 12px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  min-width: 280px;
+  max-width: 400px;
+  width: 90%;
+}
 
-  .spinner {
-    width: 40px;
-    height: 40px;
-    border: 4px solid #f3f3f3;
-    border-top: 4px solid #3498db; /* Color principal de l'spinner */
-    border-radius: 50%;
-    animation: spin 1s linear infinite;
-  }
+.spinner {
+  width: 40px;
+  height: 40px;
+  border: 4px solid #f3f3f3;
+  border-top: 4px solid #3498db;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin-bottom: 8px;
+}
 
-  @keyframes spin {
-    0% { transform: rotate(0deg); }
-    100% { transform: rotate(360deg); }
-  }
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
 
-  .loading-text {
-    font-family: sans-serif;
-    font-size: 1rem;
-    font-weight: 600;
-    color: #333333;
-    margin: 0;
-    text-align: center;
-  }
+.loading-text {
+  font-family: sans-serif;
+  font-size: 1rem;
+  font-weight: 600;
+  color: #333333;
+  margin: 0;
+  text-align: center;
+}
 
-  .loading-subtext {
-    font-family: sans-serif;
-    font-size: 0.85rem;
-    color: #666666;
-    margin: 0;
-    text-align: center;
-  }
+.loading-subtext {
+  font-family: sans-serif;
+  font-size: 0.85rem;
+  color: #666666;
+  margin: 0;
+  text-align: center;
+}
 
-  /* Àrea de missatges de logs */
-  .loading-logs {
-    width: 100%;
-    background-color: #f8fafc;
-    border: 1px solid #e2e8f0;
-    border-radius: 6px;
-    padding: 8px;
-    max-height: 110px;
-    overflow-y: auto;
-    text-align: left;
-    font-size: 0.8rem;
-    font-family: monospace;
-    box-sizing: border-box;
-    margin-top: 5px;
-  }
+/* Àrea de Logs */
+.loading-logs {
+  width: 100%;
+  background-color: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  padding: 8px;
+  max-height: 110px;
+  overflow-y: auto;
+  text-align: left;
+  font-size: 0.8rem;
+  font-family: monospace;
+  box-sizing: border-box;
+  margin-top: 8px;
+}
 
-  .log-messages p {
-    margin: 3px 0;
-    color: #475569;
-  }
+.log-messages p {
+  margin: 3px 0;
+  color: #475569;
+}
 
-  .log-messages p.success {
-    color: #16a34a;
-    font-weight: bold;
-  }
+.log-messages p.success {
+  color: #16a34a;
+  font-weight: bold;
+}
 
-  .log-messages p.highlight {
-    color: #2563eb;
-    font-weight: bold;
-  }
+.log-messages p.highlight {
+  color: #2563eb;
+  font-weight: bold;
+}
 </style>
 
   <script src="script.js"></script>
