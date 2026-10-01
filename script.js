@@ -16,17 +16,28 @@ window.addEventListener('DOMContentLoaded', () => {
     inputData.disabled = true; // En mode registrar, bloquejat a avui
   }
 
-  // Carreguem Estructura i Mapa de Qualificacions simultàniament amb Promise.all
+  // Carreguem Estructura i Mapa de Qualificacions simultàniament
   carregarDadesIniciais();
 
   // Assignació d'esdeveniments
-  document.getElementById('selectGrup').addEventListener('change', enCanviarGrup);
-  document.getElementById('selectModul').addEventListener('change', enCanviarModul);
-  document.getElementById('btnCarregar').addEventListener('click', carregarAlumnesOAssistencies);
-  document.getElementById('btnGuardar').addEventListener('click', guardarOActualitzar);
+  const selectGrup = document.getElementById('selectGrup');
+  const selectModul = document.getElementById('selectModul');
+  const btnCarregar = document.getElementById('btnCarregar');
+  const btnGuardar = document.getElementById('btnGuardar');
+  const btnModeRegistrar = document.getElementById('btnModeRegistrar');
+  const btnModeModificar = document.getElementById('btnModeModificar');
 
-  document.getElementById('btnModeRegistrar').addEventListener('click', () => canviarMode('registrar'));
-  document.getElementById('btnModeModificar').addEventListener('click', () => canviarMode('modificar'));
+  if (selectGrup) selectGrup.addEventListener('change', enCanviarGrup);
+  if (selectModul) selectModul.addEventListener('change', enCanviarModul);
+  if (btnCarregar) btnCarregar.addEventListener('click', carregarAlumnesOAssistencies);
+  if (btnGuardar) btnGuardar.addEventListener('click', guardarOActualitzar);
+
+  if (btnModeRegistrar) {
+    btnModeRegistrar.addEventListener('click', () => canviarMode('registrar'));
+  }
+  if (btnModeModificar) {
+    btnModeModificar.addEventListener('click', () => canviarMode('modificar'));
+  }
 });
 
 function getTodayFormatted() {
@@ -40,7 +51,7 @@ function getTodayFormatted() {
 // Funció genèrica per fer peticions HTTP a la Web App d'Apps Script
 async function callApi(action, params = {}, payload = null) {
   let url = `${API_URL}?action=${encodeURIComponent(action)}`;
-  
+
   for (const key in params) {
     if (params[key] !== undefined && params[key] !== null) {
       url += `&${encodeURIComponent(key)}=${encodeURIComponent(params[key])}`;
@@ -78,7 +89,7 @@ async function callApi(action, params = {}, payload = null) {
   }
 }
 
-// Càrrega SIMULTÀNIA d'Estructura i Mapa de Qualificacions (Evita bloquejos de Google)
+// Càrrega SIMULTÀNIA d'Estructura i Mapa de Qualificacions
 function carregarDadesIniciais() {
   const selectGrup = document.getElementById('selectGrup');
   if (selectGrup) selectGrup.innerHTML = '<option value="">Carregant opcions...</option>';
@@ -113,6 +124,8 @@ function carregarDadesIniciais() {
 // Pobla els grups únics de l'estructura descarregada
 function poblarDesplegableGrups() {
   const selectGrup = document.getElementById('selectGrup');
+  if (!selectGrup) return;
+
   selectGrup.innerHTML = '<option value="">-- Selecciona Curs --</option>';
 
   if (!Array.isArray(estructuraEscola) || estructuraEscola.length === 0) return;
@@ -129,9 +142,13 @@ function poblarDesplegableGrups() {
 
 // Filtre INSTANTANI de Mòduls segons el Grup triat
 function enCanviarGrup() {
-  const grup = document.getElementById('selectGrup').value;
+  const selectGrup = document.getElementById('selectGrup');
   const selectModul = document.getElementById('selectModul');
   const selectUF = document.getElementById('selectUF');
+
+  if (!selectGrup || !selectModul || !selectUF) return;
+
+  const grup = selectGrup.value;
 
   selectModul.innerHTML = '<option value="">-- Selecciona Mòdul --</option>';
   selectUF.innerHTML = '<option value="">-- Selecciona UF --</option>';
@@ -159,9 +176,14 @@ function enCanviarGrup() {
 
 // Filtre INSTANTANI de UFs segons el Mòdul triat
 function enCanviarModul() {
-  const grup = document.getElementById('selectGrup').value;
-  const modul = document.getElementById('selectModul').value;
+  const selectGrup = document.getElementById('selectGrup');
+  const selectModul = document.getElementById('selectModul');
   const selectUF = document.getElementById('selectUF');
+
+  if (!selectGrup || !selectModul || !selectUF) return;
+
+  const grup = selectGrup.value;
+  const modul = selectModul.value;
 
   selectUF.innerHTML = '<option value="">-- Selecciona UF --</option>';
   selectUF.disabled = true;
@@ -184,7 +206,7 @@ function enCanviarModul() {
 
 function canviarMode(mode) {
   currentMode = mode;
-  
+
   const btnRegistrar = document.getElementById('btnModeRegistrar');
   const btnModificar = document.getElementById('btnModeModificar');
   const btnGuardar = document.getElementById('btnGuardar');
@@ -218,19 +240,18 @@ function canviarMode(mode) {
       btnGuardar.className = "btn btn-primary";
     }
     if (containerHores) containerHores.style.display = "block";
-    
     if (inputData) inputData.disabled = false;
   }
 
-  document.getElementById('alumnesContainer').innerHTML = '';
+  const alumnesContainer = document.getElementById('alumnesContainer');
+  if (alumnesContainer) alumnesContainer.innerHTML = '';
   if (btnGuardar) btnGuardar.style.display = 'none';
 }
 
-// FILTRATGE I ORDENACIÓ CORREGITS
+// FILTRATGE I ORDENACIÓ DE PENDENTS
 function filtrarAlumnesPendents(llistaAlumnes, modul, uf, grupSolicitat) {
   if (!Array.isArray(llistaAlumnes)) return [];
 
-  // 1. Filtrar alumnes que no tinguin la UF aprovada (nota < 5 o sense nota)
   const pendents = llistaAlumnes.filter(alumne => {
     const clau = alumne.id + '_' + modul + '_' + uf;
     const dadesQ = mapaQualificacions[clau];
@@ -239,13 +260,11 @@ function filtrarAlumnesPendents(llistaAlumnes, modul, uf, grupSolicitat) {
       const textNota = String(dadesQ.nota).replace(',', '.').trim();
       const valNota = parseFloat(textNota);
 
-      // Si té una nota numèrica vàlida i és >= 5, Està APROVAT -> El descartem (false)
       if (!isNaN(valNota) && valNota >= 5) {
         return false;
       }
     }
 
-    // Si pertany al grup demanat o té la UF assignada a aquest grup, S'INCLOU
     if (alumne.grup === grupSolicitat || (dadesQ && dadesQ.grupAssignat === grupSolicitat)) {
       return true;
     }
@@ -253,7 +272,6 @@ function filtrarAlumnesPendents(llistaAlumnes, modul, uf, grupSolicitat) {
     return true;
   });
 
-  // 2. Ordenar alfabèticament pel Nom/Cognoms
   pendents.sort((a, b) => {
     const nomA = a.nomComplet || a.nom || '';
     const nomB = b.nomComplet || b.nom || '';
@@ -264,10 +282,15 @@ function filtrarAlumnesPendents(llistaAlumnes, modul, uf, grupSolicitat) {
 }
 
 async function carregarAlumnesOAssistencies() {
-  const data = document.getElementById('inputData').value;
-  const grup = document.getElementById('selectGrup').value;
-  const modul = document.getElementById('selectModul').value;
-  const uf = document.getElementById('selectUF').value;
+  const elData = document.getElementById('inputData');
+  const elGrup = document.getElementById('selectGrup');
+  const elModul = document.getElementById('selectModul');
+  const elUF = document.getElementById('selectUF');
+
+  const data = elData ? elData.value : '';
+  const grup = elGrup ? elGrup.value : '';
+  const modul = elModul ? elModul.value : '';
+  const uf = elUF ? elUF.value : '';
 
   if (!data || !grup || !modul || !uf) {
     alert("Si us plau, selecciona tots els camps del formulari.");
@@ -278,22 +301,25 @@ async function carregarAlumnesOAssistencies() {
   const infoContainer = document.getElementById('infoModeContainer');
 
   if (infoContainer) infoContainer.style.display = 'none';
-
-  container.innerHTML = '<p style="text-align: center; color: #6b7280;">Carregant dades...</p>';
+  if (container) container.innerHTML = '<p style="text-align: center; color: #6b7280;">Carregant dades...</p>';
 
   try {
     if (currentMode === 'registrar') {
       const jaExisteix = await callApi('comprovarSiExisteixRegistre', { data, grup, modul, uf });
 
       if (jaExisteix) {
-        container.innerHTML = `
-          <div style="background-color: #fef2f2; border: 1px solid #fca5a5; padding: 16px; border-radius: 8px; text-align: center; color: #991b1b; margin-top: 10px;">
-            <p style="margin: 0 0 8px 0; font-weight: bold; font-size: 1rem;">⚠️️ Atenció: Classe ja registrada</p>
-            <p style="margin: 0; font-size: 0.9rem;">Ja s'ha passat llista per a aquesta UF en la data d'avui.</p>
-            <p style="margin: 8px 0 0 0; font-size: 0.85rem; color: #7f1d1d;">Si necessites fer cap canvi, utilitza l'opció superior <strong>"Registres Anteriors"</strong>.</p>
-          </div>
-        `;
-        document.getElementById('btnGuardar').style.display = 'none';
+        if (container) {
+          container.innerHTML = `
+            <div style="background-color: #fef2f2; border: 1px solid #fca5a5; padding: 16px; border-radius: 8px; text-align: center; color: #991b1b; margin-top: 10px;">
+              <p style="margin: 0 0 8px 0; font-weight: bold; font-size: 1rem;">⚠ Atenció: Classe ja registrada</p>
+              <p style="margin: 0; font-size: 0.9rem;">Ja s'ha passat llista per a aquesta UF en la data d'avui.</p>
+              <p style="margin: 8px 0 0 0; font-size: 0.85rem; color: #7f1d1d;">Si necessites fer cap canvi, utilitza l'opció superior <strong>"Registres Anteriors"</strong>.</p>
+            </div>
+          `;
+        }
+        const btnGuardar = document.getElementById('btnGuardar');
+        if (btnGuardar) btnGuardar.style.display = 'none';
+
       } else {
         const alumnesBase = await callApi('getAlumnesBase', { grupSolicitat: grup });
         const alumnesFiltrats = filtrarAlumnesPendents(alumnesBase, modul, uf, grup);
@@ -302,7 +328,7 @@ async function carregarAlumnesOAssistencies() {
     } else {
       const res = await callApi('getAssistenciesOAlumnesPerData', { data, grup, modul, uf });
 
-      if (res.existeix) {
+      if (res && res.existeix) {
         subModeAnterior = 'editar';
         if (res.hores) {
           const elHores = document.getElementById('inputHores');
@@ -314,7 +340,6 @@ async function carregarAlumnesOAssistencies() {
           infoContainer.style.display = 'block';
         }
 
-        // Ordenar també quan es carreguen registres per modificar
         if (Array.isArray(res.alumnes)) {
           res.alumnes.sort((a, b) => (a.nomComplet || '').localeCompare(b.nomComplet || '', 'ca', { sensitivity: 'base' }));
         }
@@ -326,7 +351,7 @@ async function carregarAlumnesOAssistencies() {
           infoContainer.style.display = 'block';
         }
 
-        const alumnesBase = Array.isArray(res.alumnes) ? res.alumnes : await callApi('getAlumnesBase', { grupSolicitat: grup });
+        const alumnesBase = (res && Array.isArray(res.alumnes)) ? res.alumnes : await callApi('getAlumnesBase', { grupSolicitat: grup });
         const alumnesFiltrats = filtrarAlumnesPendents(alumnesBase, modul, uf, grup);
         renderitzadorAlumnesNoves(alumnesFiltrats);
       }
@@ -339,11 +364,13 @@ async function carregarAlumnesOAssistencies() {
 function renderitzadorAlumnesNoves(alumnes) {
   const container = document.getElementById('alumnesContainer');
   const btnGuardar = document.getElementById('btnGuardar');
+  if (!container) return;
+
   container.innerHTML = '';
 
   if (!alumnes || alumnes.length === 0) {
     container.innerHTML = '<p style="text-align: center;">No s\'han trobat alumnes matriculats o tots tenen la UF aprovada.</p>';
-    btnGuardar.style.display = 'none';
+    if (btnGuardar) btnGuardar.style.display = 'none';
     return;
   }
 
@@ -352,19 +379,23 @@ function renderitzadorAlumnesNoves(alumnes) {
     container.appendChild(card);
   });
 
-  btnGuardar.textContent = (currentMode === 'registrar') ? "Guardar Assistència" : "Guardar Registre Anterior";
-  btnGuardar.className = "btn btn-success";
-  btnGuardar.style.display = 'block';
+  if (btnGuardar) {
+    btnGuardar.textContent = (currentMode === 'registrar') ? "Guardar Assistència" : "Guardar Registre Anterior";
+    btnGuardar.className = "btn btn-success";
+    btnGuardar.style.display = 'block';
+  }
 }
 
 function renderitzadorAlumnesModificar(registres) {
   const container = document.getElementById('alumnesContainer');
   const btnGuardar = document.getElementById('btnGuardar');
+  if (!container) return;
+
   container.innerHTML = '';
 
   if (!registres || registres.length === 0) {
     container.innerHTML = '<p style="text-align: center; color: #dc2626; font-weight: 600;">No s\'han trobat registres.</p>';
-    btnGuardar.style.display = 'none';
+    if (btnGuardar) btnGuardar.style.display = 'none';
     return;
   }
 
@@ -373,9 +404,11 @@ function renderitzadorAlumnesModificar(registres) {
     container.appendChild(card);
   });
 
-  btnGuardar.textContent = "Actualitzar Registre";
-  btnGuardar.className = "btn btn-primary";
-  btnGuardar.style.display = 'block';
+  if (btnGuardar) {
+    btnGuardar.textContent = "Actualitzar Registre";
+    btnGuardar.className = "btn btn-primary";
+    btnGuardar.style.display = 'block';
+  }
 }
 
 function crearTargetaAlumne(idAlumne, nomComplet, estatActual, esMenor, idRegistre) {
@@ -423,17 +456,25 @@ function crearTargetaAlumne(idAlumne, nomComplet, estatActual, esMenor, idRegist
 
 function guardarOActualitzar() {
   const btnGuardar = document.getElementById('btnGuardar');
-  btnGuardar.disabled = true;
-  btnGuardar.textContent = "Processant...";
+  if (btnGuardar) {
+    btnGuardar.disabled = true;
+    btnGuardar.textContent = "Processant...";
+  }
 
-  const horesValor = document.getElementById('inputHores') ? document.getElementById('inputHores').value : null;
+  const elHores = document.getElementById('inputHores');
+  const horesValor = elHores ? elHores.value : null;
 
   if (currentMode === 'registrar' || (currentMode === 'modificar' && subModeAnterior === 'crear')) {
+    const elData = document.getElementById('inputData');
+    const elGrup = document.getElementById('selectGrup');
+    const elModul = document.getElementById('selectModul');
+    const elUF = document.getElementById('selectUF');
+
     const dades = {
-      data: document.getElementById('inputData').value,
-      grup: document.getElementById('selectGrup').value,
-      modul: document.getElementById('selectModul').value,
-      uf: document.getElementById('selectUF').value,
+      data: elData ? elData.value : '',
+      grup: elGrup ? elGrup.value : '',
+      modul: elModul ? elModul.value : '',
+      uf: elUF ? elUF.value : '',
       hores: horesValor,
       alumnes: []
     };
@@ -448,17 +489,23 @@ function guardarOActualitzar() {
 
     callApi('guardarAssistència', {}, { dades: dades })
       .then(res => {
-        alert(`S'ha desat l'assistència de ${res.total} alumnes.`);
-        btnGuardar.disabled = false;
-        document.getElementById('alumnesContainer').innerHTML = '';
+        alert(`S'ha desat l'assistència de ${res.total || 0} alumnes.`);
+        if (btnGuardar) btnGuardar.disabled = false;
+
+        const alumnesContainer = document.getElementById('alumnesContainer');
+        if (alumnesContainer) alumnesContainer.innerHTML = '';
+
         const infoContainer = document.getElementById('infoModeContainer');
         if (infoContainer) infoContainer.style.display = 'none';
-        btnGuardar.style.display = 'none';
+
+        if (btnGuardar) btnGuardar.style.display = 'none';
       })
       .catch(err => {
         mostrarError(err);
-        btnGuardar.disabled = false;
-        btnGuardar.textContent = "Guardar Assistència";
+        if (btnGuardar) {
+          btnGuardar.disabled = false;
+          btnGuardar.textContent = "Guardar Assistència";
+        }
       });
 
   } else {
@@ -466,8 +513,8 @@ function guardarOActualitzar() {
       hores: horesValor, 
       alumnes: [] 
     };
-    const cards = document.querySelectorAll('.student-card');
 
+    const cards = document.querySelectorAll('.student-card');
     cards.forEach(card => {
       const idRegistre = card.getAttribute('data-id-registre');
       const btnActiu = card.querySelector('.btn-status.active');
@@ -483,26 +530,34 @@ function guardarOActualitzar() {
 
     callApi('actualitzarAssistencia', {}, { dades: dades })
       .then(res => {
-        alert(`S'han actualitzat ${res.total} registres d'assistència!`);
-        btnGuardar.disabled = false;
-        document.getElementById('alumnesContainer').innerHTML = '';
+        alert(`S'han actualitzat ${res.total || 0} registres d'assistència!`);
+        if (btnGuardar) btnGuardar.disabled = false;
+
+        const alumnesContainer = document.getElementById('alumnesContainer');
+        if (alumnesContainer) alumnesContainer.innerHTML = '';
+
         const infoContainer = document.getElementById('infoModeContainer');
         if (infoContainer) infoContainer.style.display = 'none';
-        btnGuardar.style.display = 'none';
+
+        if (btnGuardar) btnGuardar.style.display = 'none';
       })
       .catch(err => {
         mostrarError(err);
-        btnGuardar.disabled = false;
-        btnGuardar.textContent = "Actualitzar Registre";
+        if (btnGuardar) {
+          btnGuardar.disabled = false;
+          btnGuardar.textContent = "Actualitzar Registre";
+        }
       });
   }
 }
 
 function mostrarError(error) {
-  const missatge = error.message || error;
-  
+  const missatge = (error && error.message) ? error.message : String(error);
+
   if (missatge.includes('JA_EXISTEIX:')) {
-    const textNetejat = missatge.replace('S\'ha produït un error en executar la funció: ', '').replace('JA_EXISTEIX: ', '');
+    const textNetejat = missatge
+      .replace('S\'ha produït un error en executar la funció: ', '')
+      .replace('JA_EXISTEIX: ', '');
     alert("⚠️ ATENCIÓ: REGISTRE DUPLICAT\n\n" + textNetejat);
   } else {
     alert("S'ha produït un error: " + missatge);
